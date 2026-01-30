@@ -1,0 +1,84 @@
+services:
+  # ------------------------------------------------------------
+  # SOURCE DATABASE (ИСТОЧНИК)
+  # ------------------------------------------------------------
+  oracle-source:
+    image: gvenzl/oracle-free
+    container_name: oracle-source
+    restart: always
+    environment:
+      ORACLE_PASSWORD: "Kate2006"
+      # ORACLE_SID is always "FREE" in this image, do not change it.
+      # ORACLE_SID: "FREE" 
+      ORACLE_PDB: "SRCPDB" # You CAN change the PDB name if you want
+      ORACLE_MEM: 4096
+    volumes:
+      - source_data:/opt/oracle/oradata:rw,z
+      - ./scripts/setup_ogg.sql:/docker-entrypoint-initdb.d/setup_ogg.sql:ro
+    networks:
+      - ogg-net
+    ports: 
+      - 1521:1521
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5m
+
+  # ------------------------------------------------------------
+  # TARGET DATABASE (ПРИЕМНИК)
+  # ------------------------------------------------------------
+  oracle-target:
+    image: gvenzl/oracle-free
+    container_name: oracle-target
+    restart: always
+    environment:
+      ORACLE_PASSWORD: "Kate2006"
+      # ORACLE_SID is always "FREE" in this image
+      ORACLE_PDB: "TGTPDB" # Identifying them by PDB is better
+      ORACLE_MEM: 4096
+    volumes:
+      - target_data:/opt/oracle/oradata:rw,z
+      - ./scripts/setup_ogg.sql:/docker-entrypoint-initdb.d/setup_ogg.sql:ro
+    networks:
+      - ogg-net
+    ports: 
+      - 2521:1521
+    depends_on:
+      oracle-source:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5m
+
+  # ------------------------------------------------------------
+  # ORACLE GOLDENGATE MICROservices
+  # ------------------------------------------------------------
+  ogg:
+    image: container-registry.oracle.com/goldengate/goldengate-oracle-free:latest
+    container_name: ogg-microservices
+    restart: always
+    ports:
+      - "9001-9010:9001-9010"
+    environment:
+      OGG_ADMIN_PWD: "Kate2006"
+      OGG_DEPLOYMENT: "Demo"
+    networks:
+      - ogg-net
+    depends_on:
+      oracle-source:
+        condition: service_healthy
+      oracle-target:
+        condition: service_healthy
+
+volumes:
+  source_data:
+  target_data:
+
+networks:
+  ogg-net:
+    driver: bridge
