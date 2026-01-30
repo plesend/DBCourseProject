@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css"/>
+  <meta charset="UTF-8">
+  <title>Vote - Shirasagi</title>
+</head>
+<body>
+    <header>
+      <button class="logout-button">Logout</button>
+      <div class="page-container">
+          <h1>SHIRASAGI</h1>
+      <hr>
+      </div>
+    </header>
+    <main class="main-container">
+      <div id="albumsContainer" class="cards-container"></div>
+    </main>
+    <footer>
+        <div class="footer-container">
+        <p>&copy; 2025 Shirasagi Awards. All rights reserved.</p>
+        </div>
+    </footer>
+<div id="voteModal" class="modal">
+  <div class="modal-content">
+    <h3>Optional Comment</h3>
+    <textarea id="commentText" placeholder="Write a comment (optional)" rows="4"></textarea>
+    <div style="text-align: center;">
+      <button id="confirmVoteBtn">Vote</button>
+      <button id="cancelVoteBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const awardId = Number(window.location.pathname.split('/').pop());
+let isVoted = false;
+let votedAlbumId = null;
+let selectedAlbumId = null;
+let calculatedWinners = false;
+
+  document.querySelector('.logout-button').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include', 
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          window.location.href = '/'; 
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Error during logout:', err);
+        alert('Network error. Please try again.');
+      }
+    });
+
+function openVoteModal(albumId) {
+  selectedAlbumId = albumId;
+  document.getElementById('voteModal').classList.add('active');
+  document.getElementById('commentText').value = '';
+}
+
+function closeVoteModal() {
+  selectedAlbumId = null;
+  document.getElementById('voteModal').classList.remove('active');
+}
+
+document.getElementById('cancelVoteBtn').addEventListener('click', closeVoteModal);
+
+document.getElementById('confirmVoteBtn').addEventListener('click', async () => {
+  if (!selectedAlbumId) return;
+
+  const comment = document.getElementById('commentText').value;
+
+  try {
+    const voteRes = await fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ awardId, albumId: selectedAlbumId, comment })
+    });
+
+    if (voteRes.ok) {
+      isVoted = true;
+      votedAlbumId = selectedAlbumId;
+      closeVoteModal();
+      await loadAlbums();
+    } else {
+      const err = await voteRes.json();
+      alert(err.error || 'Error voting');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error voting');
+  }
+});
+
+async function loadVotingStatus() {
+  try {
+    const res = await fetch(`/api/has-voted/${awardId}`);
+    const data = await res.json();
+    isVoted = data.hasVoted;
+    votedAlbumId = data.votedAlbumId ? Number(data.votedAlbumId) : null;
+  } catch (err) {
+    console.error('Не удалось проверить статус голосования', err);
+  }
+}
+
+async function loadAlbums() {
+  await loadVotingStatus();
+
+  try {
+    const calculatedWinnersRes = await fetch('/api/hasCalculatedWinners');
+    const { success: calculatedWinners } = await calculatedWinnersRes.json();
+
+    const res = await fetch(`/api/award/${awardId}`);
+    if (!res.ok) throw new Error('Failed to fetch albums');
+    const data = await res.json();
+    console.log('Albums from server:', data.rows);
+
+    const container = document.getElementById('albumsContainer');
+    container.innerHTML = '';
+
+    data.rows.forEach(row => {
+      const albumId = row[0];
+      const musicianName = row[2];
+      const title = row[3];
+      const picLink = row[6];
+
+      let buttonText = 'Vote';
+      let buttonDisabled = false;
+
+      if (calculatedWinners) {
+        buttonDisabled = true;
+      }
+
+      if (isVoted) {
+        buttonDisabled = true;
+        buttonText = albumId === votedAlbumId ? 'Voted' : 'Already voted';
+      }
+
+      const card = document.createElement('div');
+      card.className = 'card album-card';
+      card.dataset.albumId = albumId;
+
+      card.innerHTML = `
+        <img src="${picLink}" alt="${title}">
+        <h3>${title}</h3>
+        <p>${musicianName}</p>
+        <button class="vote-btn" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>
+      `;
+
+      card.querySelector('.vote-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        if (isVoted || calculatedWinners) return;
+        openVoteModal(albumId);
+      });
+
+      card.addEventListener('click', () => {
+        window.location.href = `/album/${albumId}`;
+      });
+
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Error loading albums:', err);
+  }
+}
+
+
+loadAlbums();
+</script>
+
+
+</body>
+</html>
+

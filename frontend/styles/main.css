@@ -1,0 +1,1138 @@
+@font-face {
+    font-face: 'Berosong';
+    src: url('../berosong/Berosong-Regular.woff2') format('woff2'),
+        url('../berosong/Berosong-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+
+body {
+    background-color: #101010;
+    color: #FFFFFF;
+    min-height: 100vh;
+     margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    padding: 0 5vw;
+}
+
+main {
+    flex: 1;
+}
+
+
+.main-container {
+    padding: 0 5%;
+}
+
+.page-container h1 {
+    font-family: 'Berosong', sans-serif ;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    font-size: 40px;
+}
+
+header {
+    position: relative;
+    overflow: hidden;
+}
+
+.winners-title {
+    font-family: 'Berosong';
+    text-align: center;
+    font-size: 4rem;
+}
+.winners-slider {
+  position: relative;
+  width: 95%;
+  max-width: 1200px;
+  margin: 5rem auto;
+  overflow: hidden;
+}
+
+.winners-container {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.winner-card {
+  background: #ffffff; /* чуть светлый фон, не чисто белый */
+  display: flex;
+  flex: 30 0 500px;
+  margin: 0 15px;
+  border-radius: 15px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  min-height: 300px;
+}
+
+.winner-card img {
+  width: 150px;
+  height: 300px;
+  object-fit: cover;
+}
+
+.winner-info {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.winner-info h4 {
+    font-family: 'Berosong';
+  margin: 0 0 40px 0;
+  font-size: 5rem;
+  font-weight: bold;
+  color: #222;
+}
+
+.winner-info p {
+    font-family: 'Krona One';
+  margin: 4px 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+.prev-btn, .next-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  font-size: 2rem;
+  padding: 0 10px;
+  border-radius: 50%;
+}
+
+
+.prev-btn:hover, .next-btn:hover {
+  background: rgba(0,0,0,0.7);
+}
+
+.prev-btn { left: 10px; }
+.next-btn { right: 10px; }
+
+.banner-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.banner-title h1:first-child {
+    font-family: "Krona One", sans-serif ;
+    color: #FFFFFF;
+    font-size: 100px;
+    margin-top: 0;
+    animation: fadeIn 1s ease-out forwards;
+}
+
+.banner-title h1:last-child {
+    font-family: 'Berosong', sans-serif ;
+    color: #FFFFFF;
+    font-size: 250px;
+    position: relative;
+    top: -430px;
+    color: #BF3E3E;
+    mix-blend-mode: difference;
+    animation: fadeIn 1.2s ease-out forwards, titlePulse 3s ease-in-out;
+}
+
+
+.banner-rest {
+    display: flex;
+    flex-direction: row;
+    margin-top: -800px;
+    align-items: center; 
+}
+
+.banner-rest > div { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center;
+    height: 515px; 
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+.banner-rest h3 {
+    font-size: 50px;
+    font-family: 'Berosong', sans-serif ;
+    margin: 0;
+    padding: 0;
+}
+
+.banner-rest h3,
+.banner-rest p {
+    opacity: 0;
+    animation: fadeIn 1.5s ease-out forwards;
+    animation-delay: 0.5s;
+}
+.banner-rest p {
+    margin-left: 30px;
+    font-size: 15px;
+    font-family: "Krona One", sans-serif ;
+    width: 550px;
+}
+
+header img {
+    position: absolute; 
+    right: -180px;     
+    top: 150px;
+    width: 790px;
+    height: auto;
+    animation: imgFloat 4s ease-in-out;
+}
+
+.cards-container h3 {
+    font-family: 'Berosong', sans-serif ;
+}
+
+.cards-container p {
+    font-family: "Krona One", sans-serif ;
+}
+
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center; 
+    padding: 50px 0;
+}
+
+.card {
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    width: 280px;
+    padding: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+}
+
+.card img {
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    object-fit: cover;
+}
+
+.card h3 {
+    font-family: 'Berosong', sans-serif;
+    font-size: 50px;
+    color: #FFFFFF;
+    margin: 10px 0 5px 0;
+}
+
+.card p {
+    font-family: "Krona One", sans-serif;
+    font-size: 14px;
+    color: #CCCCCC;
+    margin: 5px 0;
+}
+
+.card p strong {
+    color: #BF3E3E;
+}
+
+
+@media (max-width: 768px) {
+    .cards-container {
+        gap: 20px;
+        padding: 20px 0;
+    }
+    .card {
+        width: 90%;
+        padding: 15px;
+    }
+}
+
+
+.main-card-container {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.card.highlight {
+    background: linear-gradient(145deg, #1F1F1F, #2A2A2A);
+    border-color: #FF4C4C;
+    box-shadow: 0 20px 40px rgba(255, 50, 50, 0.7);
+    animation: highlightPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes highlightPulse {
+    0% { box-shadow: 0 20px 40px rgba(255,50,50,0.7); transform: translateY(0); }
+    50% { box-shadow: 0 25px 50px rgba(255,50,50,0.9); transform: translateY(-5px); }
+    100% { box-shadow: 0 20px 40px rgba(255,50,50,0.7); transform: translateY(0); }
+}
+
+.card.highlight h3 {
+    color: #FF4C4C;
+}
+
+
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+}
+
+
+.card {
+    width: 280px;
+    padding: 20px;
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+}
+
+footer {
+    width: 100%;
+    box-sizing: border-box; 
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border-top: 2px solid #BF3E3E;
+    padding: 20px 0;
+    text-align: center;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.footer-container p {
+    font-family: "Krona One", sans-serif;
+    color: #CCCCCC;
+    font-size: 14px;
+    margin: 0;
+    transition: color 0.3s ease; 
+}
+
+footer:hover {
+    border-top-color: #FF4C4C; 
+    box-shadow: 0 -8px 25px rgba(255, 76, 76, 0.5); 
+}
+
+footer:hover p {
+    color: #FF4C4C; 
+}
+
+.card button {
+    font-family: 'Krona One', sans-serif;
+    font-size: 20px;
+    color: #FFFFFF; 
+    background:  #222222;
+    border: 2px solid #FF4C4C;
+    border-radius: 15px;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.card button:hover {
+    background: linear-gradient(145deg, #FF4C4C, #BF3E3E);
+}
+
+.page-container hr {
+    width: 40%;
+    border: none;
+    border-top: 2px solid #BF3E3E;
+    margin: 0 auto 40px auto;
+    opacity: 0;
+    animation: fadeIn 1.5s ease-out forwards;
+}
+
+
+
+.auth-window {
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    border-radius: 25px;
+    width: 500px;
+    margin: 0 auto;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    animation: fadeIn 1.2s ease-out forwards;
+}
+
+.auth-window h2 {
+    font-family: 'Krona One', sans-serif;
+    font-size: 30px;
+    color: #FFFFFF;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+
+
+.auth-window label {
+    display: block;
+    font-family: "Krona One", sans-serif;
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #FF4C4C;
+}
+
+.auth-window input {
+    width: 100%;
+    padding: 12px 0 12px 20px;
+    box-sizing: border-box; 
+    margin-bottom: 20px;
+    border-radius: 12px;
+    background: #161616;
+    border: 2px solid #BF3E3E;
+    font-size: 16px;
+    color: #FFFFFF;
+    font-family: "Krona One", sans-serif;
+    transition: 0.3s;
+}
+
+
+.auth-window input:focus {
+    border-color: #FF4C4C;
+    box-shadow: 0 0 10px rgba(255,76,76,0.3);
+    outline: none;
+}
+
+
+
+.auth-window button {
+    width: 100%;
+    font-family: "Krona One", sans-serif;
+    font-size: 20px;
+    padding: 12px;
+    border-radius: 15px;
+    background: #222222;
+    border: 2px solid #FF4C4C;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.auth-window button:hover {
+    background: linear-gradient(145deg, #FF4C4C, #BF3E3E);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255,50,50,0.4);
+}
+
+
+
+.error {
+    margin-top: 10px;
+    color: #FF4C4C;
+    font-family: "Krona One", sans-serif;
+    text-align: center;
+}
+
+
+
+.auth-window p {
+    color: #CCCCCC;
+    text-align: center;
+    font-family: "Krona One", sans-serif;
+    margin-top: 20px;
+}
+
+.auth-window a {
+    color: #FF4C4C;
+    text-decoration: none;
+}
+
+.auth-window a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .auth-window {
+        width: 90%;
+        padding: 25px;
+    }
+
+    .auth-window h2 {
+        font-size: 45px;
+    }
+
+    .page-container h1 {
+        font-size: 40px;
+    }
+}
+
+#initial-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #1A1A1A, #222222); 
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Berosong', monospace; 
+    font-size: 2em;
+    color: #BF3E3E; 
+    text-align: center;
+    z-index: 9999; 
+    transition: opacity 0.5s ease-out, transform 0.3s ease-out;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+}
+
+#initial-loader #loading-text {
+    animation: fadeIn 1s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0 20px 0;
+    gap: 20px;
+}
+.tab-content td input {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: rgba(255, 76, 76, 0.15); 
+    color: #FFFFFF;
+    font-family: "Krona One", sans-serif;
+    font-size: inherit;
+    box-sizing: border-box;
+    outline: none;
+    transition: background 0.2s ease;
+}
+
+.tab-button {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    padding: 10px 25px;
+    border-radius: 15px;
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-button.active,
+.tab-button:hover {
+    background: linear-gradient(145deg, #FF4C4C, #BF3E3E);
+    border-color: #FF4C4C;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(255, 76, 76, 0.5);
+}
+
+.tab-content {
+    display: none; 
+    margin: 0 5%;
+    animation: fadeIn 0.8s ease-out forwards;
+    max-height: 70vh;
+    overflow-y: auto; 
+    padding-right: 10px;
+}
+
+
+.tab-content table {
+    width: 100%;
+    border-collapse: collapse;
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    border-radius: 15px;
+    overflow: hidden;
+    font-family: "Krona One", sans-serif;
+}
+
+.tab-content th{
+    padding: 12px 15px;
+    text-align: left;
+    color: #FFFFFF;
+    border-bottom: 1px solid #333;
+}
+
+
+.tab-content th {
+    background: linear-gradient(145deg, #222222, #1A1A1A);
+    color: #FF4C4C;
+    font-size: 16px;
+    position: sticky;
+    top: 0; 
+    z-index: 2;
+}
+
+.tab-content td {
+    position: relative; 
+    height: 40px; 
+    vertical-align: middle;
+    padding-left: 12px;
+}
+
+.tab-content td input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 12px 15px; 
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: rgba(255, 76, 76, 0.15);
+    color: #FFFFFF;
+    font-family: "Krona One", sans-serif;
+    font-size: inherit;
+    box-sizing: border-box;
+    outline: none;
+    transition: background 0.2s ease;
+}
+
+.tab-content td input:focus {
+    background: rgba(255, 76, 76, 0.3);
+    box-shadow: inset 0 0 8px rgba(255, 76, 76, 0.4);
+}
+
+.tab-content tr:hover {
+    background: rgba(255, 76, 76, 0.2);
+    transition: background 0.3s ease;
+}
+.tab-content tbody tr.selected {
+    background: rgba(255, 76, 76, 0.3) !important;  
+    transition: background 0.3s ease;
+}
+
+.action-buttons {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.action-buttons button {
+    margin-right: 10px;
+    padding: 10px 20px;
+    font-family: "Krona One", sans-serif;
+    font-size: 16px;
+    color: #FFFFFF;
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-buttons button:hover {
+    background: linear-gradient(145deg, #FF4C4C, #BF3E3E);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255,76,76,0.5);
+}
+
+
+
+.album_page_container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 5vw;
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 60px;
+    animation: fadeIn 1s ease-out forwards;
+}
+
+.album_left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.album_cover {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    border-radius: 20px;
+    border: 3px solid #BF3E3E;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.album_cover:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px rgba(191, 62, 62, 0.5);
+}
+
+.album_name {
+    font-family: 'Berosong', sans-serif;
+    font-size: 48px;
+    color: #FFFFFF;
+    margin: 30px 0 10px 0;
+}
+
+.album_artist {
+    font-family: "Krona One", sans-serif;
+    font-size: 28px;
+    color: #FF4C4C;
+    margin: 0 0 15px 0;
+}
+
+.album_release_date {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #CCCCCC;
+    margin-bottom: 25px;
+}
+
+.album_left a {
+    display: inline-block;
+    font-family: "Krona One", sans-serif;
+    font-size: 20px;
+    color: #FFFFFF;
+    background: linear-gradient(145deg, #222222, #1A1A1A);
+    padding: 12px 30px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.album_left a:hover {
+    background: linear-gradient(145deg, #FF4C4C, #BF3E3E);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 76, 76, 0.4);
+}
+
+
+.album_right {
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+}
+
+.album_description,
+.album_comments {
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+
+
+    padding: 30px;
+
+}
+
+.album_description h2,
+.album_comments h2 {
+    font-family: 'Berosong', sans-serif;
+    font-size: 32px;
+    color: #FF4C4C;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.album_description p {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #CCCCCC;
+    line-height: 1.6;
+}
+
+
+.album_comments p {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #888888;
+    text-align: left;
+    font-style: italic;
+}
+
+.logout-button {
+    position: fixed;              
+    top: 20px;                    
+    right: 20px;                 
+    z-index: 1000;                
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #FFFFFF;
+    background: #101010;
+    border: none;
+    padding: 10px 28px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+    background: #1A1A1A;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px; /* расстояние между кнопками */
+    justify-content: flex-end; /* кнопки прижаты вправо */
+    margin: 20px; /* отступ сверху и сбоку */
+}
+
+.admin-logout-button,
+.calculate-button {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #FFFFFF;
+    background: #101010;
+    border: none;
+    padding: 10px 28px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.admin-logout-button:hover,
+.calculate-button:hover {
+    background: #1A1A1A;
+}
+
+.header-container {
+    position: relative;       
+    padding: 0px 5vw 20px 5vw;
+    text-align: center;
+}
+.header-container h1 {
+    margin: 0;
+    font-family: 'Berosong', sans-serif;
+    color: #FFFFFF;
+    display: inline-block;
+}
+
+
+@media (max-width: 600px) {
+    .logout-button {
+        font-size: 16px;
+        padding: 10px 24px;
+        width: 100%;
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .album_page_container {
+        grid-template-columns: 350px 1fr;
+        gap: 40px;
+    }
+}
+
+@media (max-width: 868px) {
+    .album_page_container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .album_left {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .album_name {
+        font-size: 42px;
+    }
+    
+    .album_artist {
+        font-size: 26px;
+    }
+}
+
+@media (max-width: 480px) {
+    .album_name {
+        font-size: 36px;
+    }
+    
+    .album_artist {
+        font-size: 24px;
+    }
+    
+    .album_description h2,
+    .album_comments h2 {
+        font-size: 28px;
+    }
+    
+    .album_description,
+    .album_comments {
+        padding: 20px;
+    }
+    
+    .album_page_container {
+        margin: 20px auto;
+        padding: 0 5vw;
+    }
+}
+
+.selected-row {
+  background-color: rgba(255, 76, 76, 0.5);
+}
+
+
+button:disabled,
+button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important; 
+}
+
+.modal {
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    backdrop-filter: blur(5px); 
+}
+
+.modal.active {
+    display: flex;
+    opacity: 1;
+}
+
+
+.modal-content {
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    border: 2px solid #BF3E3E;
+    border-radius: 20px;
+    padding: 40px 30px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+    animation: modalFadeIn 0.5s ease-out forwards;
+    transform: scale(0.9);
+}
+
+@keyframes modalFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-content h2,
+.modal-content h3 {
+    font-family: 'Berosong', sans-serif;
+    font-size: 36px;
+    color: #FF4C4C;
+    margin: 0 0 20px 0;
+}
+
+.modal-content p {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #CCCCCC;
+    line-height: 1.6;
+    margin: 15px 0;
+}
+
+.modal-content input,
+.modal-content textarea {
+    width: 100%;
+    padding: 14px 20px;
+    margin: 12px 0;
+    box-sizing: border-box;
+    background: #161616;
+    border: 2px solid #BF3E3E;
+    border-radius: 12px;
+    color: #FFFFFF;
+    font-family: "Krona One", sans-serif;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus {
+    outline: none;
+    border-color: #FF4C4C;
+    box-shadow: 0 0 12px rgba(255, 76, 76, 0.3);
+}
+
+.modal-content textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.modal-content button {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    padding: 12px 28px;
+    margin: 10px 8px;
+    min-width: 120px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-content button.primary {
+    background: linear-gradient(145deg, #222222, #1A1A1A);
+    border: 2px solid #FF4C4C;
+    color: #FFFFFF;
+}
+
+.modal-content button.primary:hover {
+    background: linear-gradient(145deg, #FF4C4C, #BF3E3E);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 76, 76, 0.4);
+}
+
+.modal-content button.secondary {
+    background: transparent;
+    border: 2px solid #666666;
+    color: #CCCCCC;
+}
+
+.modal-content button.secondary:hover {
+    border-color: #FF4C4C;
+    color: #FF4C4C;
+    transform: translateY(-3px);
+}
+
+.modal-content .error {
+    color: #FF4C4C;
+    font-family: "Krona One", sans-serif;
+    font-size: 15px;
+    margin: 10px 0;
+    min-height: 20px;
+}
+
+@media (max-width: 600px) {
+    .modal-content {
+        padding: 30px 20px;
+        border-radius: 15px;
+    }
+
+    .modal-content h2,
+    .modal-content h3 {
+        font-size: 30px;
+    }
+
+    .modal-content button {
+        width: 100%;
+        margin: 8px 0;
+    }
+}
+
+.album_tracks {
+    padding: 30px;
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 1s ease-out forwards;
+}
+
+.album_tracks h2 {
+    font-family: 'Berosong', sans-serif;
+    font-size: 36px;
+    color: #FF4C4C;
+    margin: 0 0 25px 0;
+    text-align: center;
+    text-shadow: 0 2px 10px rgba(255, 76, 76, 0.3);
+}
+
+.album_tracks ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.album_tracks li {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #FFFFFF;
+    padding: 14px 20px;
+    margin-bottom: 12px;
+    background: linear-gradient(145deg, #161616, #1E1E1E);
+    border-radius: 12px;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.album_tracks li::before {
+    font-family: 'Berosong', sans-serif;
+    font-size: 24px;
+    color: #FF4C4C;
+    margin-right: 15px;
+    font-weight: bold;
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.album_tracks li:nth-child(odd) {
+    background: linear-gradient(145deg, #1A1A1A, #222222);
+}
+
+.album_tracks p {
+    font-family: "Krona One", sans-serif;
+    font-size: 18px;
+    color: #888888;
+    text-align: center;
+    font-style: italic;
+    margin: 20px 0 0 0;
+}
+
+@media (max-width: 768px) {
+    .album_tracks {
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .album_tracks h2 {
+        font-size: 32px;
+    }
+    
+    .album_tracks li {
+        font-size: 16px;
+        padding: 12px 18px;
+    }
+    
+    .album_tracks li::before {
+        font-size: 22px;
+        left: 18px;
+    }
+}

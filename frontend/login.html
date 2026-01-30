@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css"/>
+    <title>Login - Shirasagi</title>
+</head>
+<body>
+    <header>
+      <div class="page-container">
+          <h1>SHIRASAGI</h1>
+      <hr>
+      </div>
+    </header>
+    <main class="main-container">
+        <div class="auth-window">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required>
+      
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+      
+      <button type="submit">Login</button>
+      <div class="error" id="loginError"></div>
+    </form>
+    <div>
+      <p>Don't have an sccount? <a href="/register">Sign up</a> </p>
+    </div>
+  </div>
+    </main>
+    <footer>
+        <div class="footer-container">
+        <p>&copy; 2025 Shirasagi Awards. All rights reserved.</p>
+        </div>
+    </footer>
+  <div id="initial-loader"><h2 id="loading-text">Loading</h2></div>
+
+<script>
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+const loaderElement = document.getElementById('initial-loader');
+const loadingText = document.getElementById('loading-text');
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  try {
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      const user = data.user;
+      if (loaderElement && loadingText) {
+        loaderElement.style.display = 'flex'; 
+
+        let dotCount = 0;
+        const baseText = 'Loading';
+        const animationInterval = setInterval(() => {
+          dotCount = (dotCount + 1) % 4;
+          const dots = Array(dotCount).fill(' .').join(' ');
+          loadingText.textContent = `${baseText}${dots}`;
+        }, 400);
+
+        setTimeout(() => {
+          clearInterval(animationInterval);
+
+          loadingText.textContent = 'Loading . . . initialized';
+
+          setTimeout(() => {
+            loaderElement.style.opacity = '0';
+
+            setTimeout(() => {
+              loaderElement.remove();
+              if (user.role === "admin_user" || user.role === "manager_user") {
+                window.location.href = '/adminpanel';
+              } else {
+                window.location.href = '/awards';
+              }
+            }, 300); 
+
+          }, 600); 
+
+        }, 3200);
+      }
+
+    } else {
+      loginError.textContent = data.error;
+    }
+
+  } catch (err) {
+    loginError.textContent = 'Server error. Try again later.';
+    console.error(err);
+  }
+});
+</script>
+
+
+
+</body>
+</html>

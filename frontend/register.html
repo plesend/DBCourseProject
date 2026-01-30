@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css"/>
+    <title>Sign up - Shirasagi</title>
+</head>
+<body>
+    <header>
+      <div class="page-container">
+          <h1>SHIRASAGI</h1>
+      <hr>
+      </div>
+    </header>
+    <main class="main-container">
+        <div class="auth-window">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="gmail">Gmail:</label>
+      <input type="email" id="gmail" name="gmail" required placeholder="example@gmail.com">
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+      
+      <button type="submit">Register</button>
+      <div class="error" id="registerError"></div>
+    </form>
+    <div>
+        <p>Already have an account? <a href="/login">Sign in</a></p>
+    </div>
+  </div>
+    </main>
+    <footer>
+        <div class="footer-container">
+        <p>&copy; 2025 Shirasagi Awards. All rights reserved.</p>
+        </div>
+    </footer>
+
+<script>
+    const registerForm = document.getElementById('registerForm');
+    const registerError = document.getElementById('registerError');
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const gmail = document.getElementById('gmail').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, gmail, password })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          alert('Registration successful! You can now login.');
+          window.location.href = '/login.html';
+        } else {
+          registerError.textContent = data.error;
+        }
+
+      } catch (err) {
+        registerError.textContent = 'Server error. Try again later.';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

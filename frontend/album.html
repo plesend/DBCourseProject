@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/main.css"/>
+    <title>Album - Shirasagi</title>
+</head>
+<body>
+     <header>
+      <button class="logout-button">Logout</button>
+      <div class="page-container">
+          <h1>SHIRASAGI</h1>
+      <hr>
+      </div>
+    </header>
+<main>
+    <div class="album_page_container">
+        <div class="album_left"></div>
+        <div class="album_right">
+            <div class="album_description"></div>
+            <div class="album_tracks"></div>
+            <div class="album_comments"></div>
+        </div>
+    </div>
+</main>
+    <footer>
+        <div class="footer-container">
+           <p>&copy; 2025 Shirasagi Awards. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+<script>
+      document.querySelector('.logout-button').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include', 
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          window.location.href = '/'; 
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Error during logout:', err);
+        alert('Network error. Please try again.');
+      }
+    });
+    const albumId = Number(window.location.pathname.split('/').pop());
+    console.log(window.location.pathname.split('/').pop());
+    
+    async function loadAlbumInfo() {
+    const res = await fetch(`/api/album/${albumId}`);
+    if (!res.ok) throw new Error('Failed to fetch an album');
+    const album = await res.json();
+
+    const leftCol = document.querySelector('.album_left');
+    leftCol.innerHTML = `
+        <img src="${album[7] || 'default_cover.jpg'}" class="album_cover">
+        <h1 class="album_name">${album[4]}</h1>
+        <h3 class="album_artist">${album[2]}</h3>
+        <p class="album_release_date">Release: ${album[5]}</p>
+        <a href="${album[6]}" target="_blank">Listen</a>
+    `;
+
+    const rightDesc = document.querySelector('.album_description');
+    rightDesc.innerHTML = `
+        <h2>About the Musician</h2>
+        <p>${album[3] || 'No additional info available.'}</p>
+    `;
+
+    const tracksDiv = document.querySelector('.album_tracks');
+    try {
+        const resTracks = await fetch(`/api/get-tracks-by-album/${albumId}`);
+        const tracks = await resTracks.json();
+
+        if (!tracks || tracks.length === 0) {
+            tracksDiv.innerHTML = `<h2>Tracks</h2><p>No tracks available.</p>`;
+        } else {
+            tracksDiv.innerHTML = `<h2>Tracks</h2>` +
+                `<ol>` + tracks.map(t => `<li>${t[1]}</li>`).join('') + `</ol>`;
+        }
+    } catch (err) {
+        tracksDiv.innerHTML = `<h2>Tracks</h2><p>Error loading tracks.</p>`;
+        console.error(err);
+    }
+
+    const rightComments = document.querySelector('.album_comments');
+    try {
+        const resComments = await fetch(`/api/get-comments/${albumId}`);
+        const comments = await resComments.json();
+
+        if (!comments || comments.length === 0) {
+            rightComments.innerHTML = `<h2>Comments</h2><p>Comments will appear here...</p>`;
+        } else {
+            rightComments.innerHTML = `<h2>Comments</h2>` +
+                comments.map(c => `<p>${c[0]}: ${c[1] || 'No comment'}</p>`).join('');
+        }
+    } catch (err) {
+        rightComments.innerHTML = `<h2>Comments</h2><p>Error loading comments.</p>`;
+        console.error(err);
+    }
+}
+
+loadAlbumInfo();
+</script>
+</html>

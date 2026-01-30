@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css"/>
+<title>Admin Panel - Shirasagi</title>
+</head>
+<body>
+<header>
+  <div class="page-container header-container">
+    <h1>SHIRASAGI <div class="header-buttons">
+      <button class="calculate-button">Calculate</button>
+      <button class="admin-logout-button">Logout</button>
+    </div></h1>
+    <hr>
+    
+    
+  </div>
+</header>
+<main class="main-container">
+  <div class="tabs">
+    <button class="tab-button tab-button-admin" data-tab="managers">Managers</button>
+    <button class="tab-button" data-tab="musicians">Musicians</button>
+    <button class="tab-button" data-tab="albums">Albums</button>
+    <button class="tab-button" data-tab="music">Music</button>
+    <button class="tab-button" data-tab="votes">Votes</button>
+    <button class="tab-button" data-tab="awards">Awards</button>
+    <button class="tab-button" data-tab="nominants">Nominants</button>
+  </div>
+  <div class="tab-content" id="managers" style="display:none;"></div>
+  <div class="tab-content" id="musicians" style="display:none;"></div>
+  <div class="tab-content" id="albums" style="display:none;"></div>
+  <div class="tab-content" id="music" style="display:none;"></div>
+  <div class="tab-content" id="votes" style="display:none;"></div>
+  <div class="tab-content" id="awards" style="display:none;"></div>
+  <div class="tab-content" id="nominants" style="display:none;"></div>
+  <div class="action-buttons">
+    <button id="updateBtn">Update</button>
+    <button id="addBtn">Add</button>
+    <button id="deleteBtn">Delete</button>
+  </div>
+</main>
+<footer>
+  <div class="footer-container">
+    <p>&copy; 2025 Shirasagi Awards. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- Modal: Add Manager -->
+<div class="modal" id="addManagerModal">
+  <div class="modal-content">
+    <h3>Add Manager</h3>
+    <input type="text" id="newUsername" placeholder="Username" />
+    <input type="email" id="newGmail" placeholder="Gmail" />
+    <input type="password" id="newPassword" placeholder="Password" />
+    <div class="error" id="modalError"></div>
+    <button class="primary" id="modalOkBtn">OK</button>
+    <button class="secondary" onclick="closeModal('addManagerModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- Modal: Add Musician -->
+<div class="modal" id="addMusicianModal">
+  <div class="modal-content">
+    <h3>Add Musician</h3>
+    <input type="text" id="musName" placeholder="Name" required />
+    <input type="text" id="musInfo" placeholder="Info (optional)" />
+    <div class="error" id="musError"></div>
+    <button class="primary" id="musOkBtn">OK</button>
+    <button class="secondary" onclick="closeModal('addMusicianModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- Modal: Add Track -->
+<div class="modal" id="addTrackModal">
+  <div class="modal-content">
+    <h3>Add Track</h3>
+    <input type="text" id="trackTitle" placeholder="Track Title" required />
+    <input type="number" id="trackAlbumId" placeholder="Album ID" required />
+    <div class="error" id="trackError"></div>
+    <button class="primary" id="trackOkBtn">OK</button>
+    <button class="secondary" onclick="closeModal('addTrackModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- Modal: Add Album -->
+<div class="modal" id="addAlbumModal">
+  <div class="modal-content">
+    <h3>Add Album</h3>
+    <input type="text" id="albTitle" placeholder="Title" required />
+    <input type="number" id="albMusicianId" placeholder="Musician ID" required />
+    <input type="date" id="albReleaseDate" placeholder="Release Date" />
+    <input type="url" id="albLink" placeholder="Link (Spotify/YouTube etc.)" required />
+    <input type="url" id="albPicLink" placeholder="Picture link (optional)" />
+    <div class="error" id="albError"></div>
+    <button class="primary" id="albOkBtn">OK</button>
+    <button class="secondary" onclick="closeModal('addAlbumModal')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal" id="addNominantModal">
+    <div class="modal-content">
+        <h3>Add Nominant</h3>
+        <input type="number" id="nominantAwardId" placeholder="award_id" required />
+        <input type="number" id="nominantAlbumId" placeholder="album_id" required />
+        <div class="error" id="nominantError"></div>
+        <button class="primary" id="nominantOkBtn">Ok</button>
+        <button class="secondary" onclick="closeModal('addNominantModal')">Cancel</button>
+    </div>
+</div>
+
+
+<script>
+let selectedCell = null;
+let editedValue = null;
+let originalRowData = null;
+
+let selectToDeleteRow = null;
+let selectedRow = null;
+let userRole = '';
+let currentTab = null;
+
+  document.querySelector('.admin-logout-button').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include', 
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          window.location.href = '/'; 
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Error during logout:', err);
+        alert('Network error. Please try again.');
+      }
+    });
+
+async function initTabs() {
+  try {
+    const res = await fetch('/api/user-info');
+    const data = await res.json();
+    if (!data.user) {
+      alert('Неавторизованный пользователь');
+      return;
+    }
+
+    userRole = data.user.role; 
+
+    const allTabs = document.querySelectorAll('.tab-button');
+    const allContents = document.querySelectorAll('.tab-content');
+
+    allTabs.forEach(tab => {
+      const tabId = tab.dataset.tab;
+
+      if (userRole === 'admin_user') {
+        if (tabId !== 'managers') tab.style.display = 'none';
+      } else if (userRole === 'manager_user') {
+        if (tabId === 'managers') tab.style.display = 'none';
+      }
+    });
+
+    allContents.forEach(content => {
+      const tabId = content.id;
+      if (userRole === 'admin_user' && tabId !== 'managers') content.style.display = 'none';
+      if (userRole === 'manager_user' && tabId === 'managers') content.style.display = 'none';
+    });
+
+    const firstVisibleTab = Array.from(allTabs).find(tab => tab.style.display !== 'none');
+    if (firstVisibleTab) showTab(firstVisibleTab.dataset.tab);
+
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка при получении данных пользователя');
+  }
+}
+
+function showTab(tabId) {
+  currentTab = tabId;
+  document.querySelectorAll('.tab-content').forEach(tc => {
+    tc.style.display = (tc.id === tabId) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-button').forEach(tb => {
+    tb.classList.toggle('active', tb.dataset.tab === tabId);
+  });
+  updateActionButtons(tabId);
+  loadTable(tabId);
+}
+
+
+document.querySelectorAll('.tab-button').forEach(tab => {
+  tab.addEventListener('click', () => {
+    showTab(tab.dataset.tab);
+  });
+});
+
+
+async function loadTable(tabId) {
+  let endpoint = '';
+
+  switch (tabId) {
+    case 'managers':  endpoint = '/api/admin-managers'; break;
+    case 'musicians': endpoint = '/api/admin-musicians'; break;
+    case 'albums':    endpoint = '/api/admin-albums'; break;
+    case 'music':     endpoint = '/api/admin-music'; break;
+    case 'votes':     endpoint = '/api/admin-votes'; break;
+    case 'awards':    endpoint = '/api/admin-awards'; break;
+    case 'nominants': endpoint = '/api/admin-nominants'; break;
+    default: return;
+  }
+
+  const container = document.getElementById(tabId);
+  container.innerHTML = 'Loading...';
+
+  try {
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const table = document.createElement('table');
+    table.className = 'data-table';
+
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    data.columns.forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    data.rows.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = row[0];
+
+      row.forEach((cell, index) => {
+        const td = document.createElement('td');
+        td.textContent = cell ?? '';
+
+        if (index === 0) td.classList.add('readonly');
+
+        tr.appendChild(td);
+      });
+
+      tr.querySelectorAll('td').forEach((td, idx) => {
+        if (tabId !== 'nominants' && idx === 0) return;
+        td.addEventListener('dblclick', () => {
+          selectedRow = tr;
+          originalRowData = Array.from(tr.children).map(td =>
+              td.textContent.trim()
+          );
+          makeCellEditable(td);
+        });
+      });
+
+
+      tr.addEventListener('click', () => {
+          if (selectedRow) selectedRow.classList.remove('selected-row');
+      
+          selectedRow = tr;
+          tr.classList.add('selected-row');
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    container.innerHTML = '';
+    container.appendChild(table);
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<p style="color:red;">Ошибка загрузки данных: ${err.message}</p>`;
+  }
+}
+
+function makeCellEditable(td) {
+    if (td.querySelector('input')) return;
+
+    selectedCell = td;
+
+    const oldValue = td.textContent;
+    td.dataset.oldValue = oldValue;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = oldValue;
+    input.style.width = '100%';
+
+    td.textContent = '';
+    td.appendChild(input);
+    input.focus();
+
+    const saveValue = () => {
+        td.textContent = input.value.trim();
+        td.dataset.currentValue = input.value.trim();
+    };
+
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveValue();
+        if (e.key === 'Escape') cancelEdit(td);
+    });
+
+    input.addEventListener('blur', saveValue);
+}
+
+
+
+function openModalByTab(tabId) {
+    let modalId = '';
+    switch(tabId) {
+        case 'managers': modalId = 'addManagerModal'; break;
+        case 'musicians': modalId = 'addMusicianModal'; break;
+        case 'albums': modalId = 'addAlbumModal'; break;
+        case 'music': modalId = 'addTrackModal'; break;
+        case 'nominants': modalId = 'addNominantModal'; break;
+        default: return;
+    }
+
+    const modal = document.getElementById(modalId);
+    if(modal) modal.classList.add('active'); 
+}
+
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if(modal) modal.classList.remove('active'); 
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs();
+
+  const addBtn = document.getElementById('addBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      if(currentTab) openModalByTab(currentTab);
+    });
+  }
+
+});
+
+async function handleAdd() {
+    if (!currentTab) return;
+
+    let endpoint = '';
+    let payload = {};
+    let modalId = '';
+
+    switch(currentTab) {
+        case 'managers':
+            endpoint = '/api/add-manager';
+            modalId = 'addManagerModal';
+            payload = {
+                username: document.getElementById('newUsername').value.trim(),
+                gmail: document.getElementById('newGmail').value.trim(),
+                password: document.getElementById('newPassword').value.trim()
+            };
+            break;
+
+        case 'musicians':
+            endpoint = '/api/add-musician';
+            modalId = 'addMusicianModal';
+            payload = {
+                name: document.getElementById('musName').value.trim(),
+                info: document.getElementById('musInfo').value.trim()
+            };
+            break;
+
+        case 'albums':
+            endpoint = '/api/add-album';
+            modalId = 'addAlbumModal';
+            payload = {
+                title: document.getElementById('albTitle').value.trim(),
+                musicianId: document.getElementById('albMusicianId').value.trim(),
+                releaseDate: document.getElementById('albReleaseDate').value,
+                link: document.getElementById('albLink').value.trim(),
+                picLink: document.getElementById('albPicLink').value.trim()
+            };
+            break;
+
+        case 'music':
+            endpoint = '/api/add-track';
+            modalId = 'addTrackModal';
+            payload = {
+                title: document.getElementById('trackTitle').value.trim(),
+                albumId: document.getElementById('trackAlbumId').value.trim()
+            };
+            break;
+
+         case 'nominants':
+            endpoint = '/api/add-nominant';
+            modalId = 'addNominantModal';
+            payload = {
+                awardId: document.getElementById('nominantAwardId').value.trim(),
+                albumId: document.getElementById('nominantAlbumId').value.trim()
+            };
+            break;
+
+        default:
+            return;
+    }
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.message || 'Ошибка сервера');
+        closeModal(modalId);
+        loadTable(currentTab);
+
+    } catch (err) {
+        console.error(err);
+        const errorDiv = document.querySelector(`#${modalId} .error`);
+        if (errorDiv) errorDiv.textContent = err.message;
+    }
+}
+
+
+async function handleUpdate() {
+    if (!currentTab || !selectedRow) {
+        alert('Выберите строку для обновления');
+        return;
+    }
+
+    const activeInput = selectedRow.querySelector('input');
+    if (activeInput) {
+        activeInput.blur(); 
+    }
+
+const cells = Array.from(selectedRow.children).map(td => {
+  const input = td.querySelector('input');
+  return input ? input.value.trim() : td.textContent.trim();
+});
+console.log(cells);
+
+    let endpoint = '';
+    let payload = {};
+
+    switch (currentTab) {
+        case 'managers':
+            endpoint = '/api/update-manager';
+            payload = {
+                user_id: cells[0],
+                username: cells[1],
+                gmail: cells[2],
+                password: cells[3]
+            };
+            break;
+
+        case 'musicians':
+            endpoint = '/api/update-musician';
+            payload = {
+                musicianId: cells[0],
+                name: cells[1],
+                info: cells[2],
+                status: cells[3]
+            };
+            break;
+
+        case 'albums':
+            endpoint = '/api/update-album';
+            payload = {
+                albumId: cells[0],
+                musicianId: cells[1],
+                title: cells[2],
+                releaseDate: cells[3],
+                link: cells[4],
+                picture: cells[5]
+            };
+            break;
+
+        case 'music':
+            endpoint = '/api/update-track';
+            payload = {
+                trackId: cells[0],
+                title: cells[2]
+            };
+            break;
+
+        case 'awards':
+            endpoint = '/api/update-award';
+            payload = {
+                awardId: cells[0],
+                awardName: cells[1],
+                awardDescription: cells[2]
+            };
+            break;
+        default:
+            return;
+    }
+
+    try {
+      console.log('Sending update:', JSON.stringify(payload));
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Update error');
+        }
+
+        loadTable(currentTab);
+
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+    } finally {
+      selectedRow = null;
+    }
+}
+const tabButtonConfig = {
+    managers:   { update: true, add: true, delete: true },
+    musicians:  { update: true, add: true, delete: true },
+    albums:     { update: true, add: true, delete: true },
+    music:      { update: true, add: true, delete: true },
+    votes:      { update: false, add: false, delete: true },
+    awards:     { update: true, add: false, delete: false },
+    nominants:  { update: false, add: true, delete: false }
+};
+
+
+function updateActionButtons(tabId) {
+    const updateBtn = document.getElementById('updateBtn');
+    const addBtn    = document.getElementById('addBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+
+    const config = tabButtonConfig[tabId] || { update: false, add: false, delete: false };
+
+    updateBtn.disabled = !config.update;
+    addBtn.disabled    = !config.add;
+    deleteBtn.disabled = !config.delete;
+
+    updateBtn.classList.toggle('disabled', !config.update);
+    addBtn.classList.toggle('disabled', !config.add);
+    deleteBtn.classList.toggle('disabled', !config.delete);
+}
+
+async function handleDelete() {
+    if (!currentTab || !selectedRow) {
+        alert('Выберите строку для удаления');
+        return;
+    }
+
+    const cells = Array.from(selectedRow.children).map(td => td.textContent.trim());
+
+    let endpoint = '';
+    let payload = {};
+
+    switch (currentTab) {
+        case 'managers':
+            endpoint = '/api/delete-manager';
+            payload = { user_id: cells[0] };
+            break;
+
+        case 'musicians':
+            endpoint = '/api/delete-musician';
+            payload = { musicianId: cells[0] };
+            break;
+
+        case 'albums':
+            endpoint = '/api/delete-album';
+            payload = { albumId: cells[0] };
+            break;
+
+        case 'music':
+            endpoint = '/api/delete-track';
+            payload = { trackId: cells[0] };
+            break;
+
+        case 'awards':
+            endpoint = '/api/delete-award';
+            payload = { awardId: cells[0] };
+            break;
+
+        case 'votes': 
+            endpoint = '/api/delete-vote';
+            payload = { voteId: cells[0] };
+            break;
+
+        default:
+            return;
+    }
+
+    if (!endpoint) return;
+
+    const confirmDelete = confirm('Вы уверены, что хотите удалить эту запись?');
+    if (!confirmDelete) return;
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Ошибка удаления');
+        }
+
+        selectedRow.remove();
+        selectedRow = null;
+
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+    }
+}
+
+document.getElementById('deleteBtn')?.addEventListener('click', handleDelete);
+
+
+document.getElementById('modalOkBtn')?.addEventListener('click', handleAdd);
+document.getElementById('musOkBtn')?.addEventListener('click', handleAdd);
+document.getElementById('albOkBtn')?.addEventListener('click', handleAdd);
+document.getElementById('trackOkBtn')?.addEventListener('click', handleAdd);
+document.getElementById('nominantOkBtn')?.addEventListener('click', handleAdd);
+
+async function calculateWinnersHandler() {
+  try {
+    const hasCalculatedWinnersRes = await fetch('/api/hasCalculatedWinners');
+    const { success: calculatedWinners } = await hasCalculatedWinnersRes.json();
+
+    if (calculatedWinners) {
+      alert('Winners were already calculated.');
+      return;
+    }
+
+    const confirmed = confirm(
+      'You are about to calculate the winners. ' +
+      'This action cannot be undone. Do you want to continue?'
+    );
+    if (!confirmed) return;
+
+    const res = await fetch('/api/calculate-winners');
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Error calculating winners');
+    }
+
+    alert('Winners have been successfully calculated!');
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+}
+
+
+
+document.querySelector('.calculate-button').addEventListener('click', calculateWinnersHandler);
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('updateBtn')
+        ?.addEventListener('click', handleUpdate);
+});
+
+</script>
+</body>
+</html>
+

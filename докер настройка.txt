@@ -1,0 +1,370 @@
+Может понадобиться для коннекта от дба: 
+docker exec -it oracle-target sqlplus "sys/Kate2006@//localhost:1521/FREEPDB1 as sysdba"
+
+docker exec -i oracle-source sqlplus system/Kate2006@//localhost:1521/FREEPDB1
+docker exec -i oracle-target sqlplus system/Kate2006@//localhost:1521/FREEPDB1
+ЗДЕСЬ ОБЯЗАТЕЛЬНО ПОМЕНЯТЬ НА oracle-target ПОТОМ
+ПРИ КАЖДОМ КОННЕКТЕ ОБЯЗАТЕЛЬНО ПРОВЕРЯТЬ show con_name И МЕНЯТЬ oracle-target НА oracle-source И НАОБОРОТ
+
+SRCPDB не существует, поэтому юзается FREEPDB1. комманда перекидывает прост на дефолтный коннект стринг: 
+
+system
+Kate2006
+
+ЕСЛИ ПЕРЕКИДЫВАЕТ, ТО ВЫ 99% БУДЕТЕ В СДБ ЧТО ОЧЕНЬ И ОЧЕНЬ ПЛОХО, ГОЛДЕНГЕЙТ РАБОТАЕТ С ПДБ
+
+настройка сурса и таргет для голденгейта:
+------------------------------------------------
+SOURCE
+-- 1. Enable GoldenGate Replication
+  alter system set enable_goldengate_replication=true scope=both;
+  
+  -- 2. Force Logging for data safety
+  alter database force logging;
+--ПОДКЛЮЧИТЬСЯ К СДБ, ПОТОМ ОТКЛЮЧИТЬСЯ И СНОВА ПДБ
+  alter database add supplemental log data;
+
+  -- 3. Create GoldenGate User
+  create user ggadmin identified by Kate2006;
+  grant dba to ggadmin;
+  grant connect, resource to ggadmin;
+  
+  -- 4. Prepare for Schema Replication (Example Schema: HR)
+  create user hr identified by hr;
+  grant connect, resource to hr;
+  alter user hr quota unlimited on users;
+  create table hr.employees (id number primary key, name varchar2(50));
+  exit;
+
+TARGET
+-- 1. Enable GoldenGate Replication
+  alter system set enable_goldengate_replication=true scope=both;
+
+  -- 2. Create GoldenGate User
+  create user ggadmin identified by Kate2006;
+  grant dba to ggadmin;
+  grant connect, resource to ggadmin;
+
+  -- 3. Create Target Schema (Must exist to receive data)
+  create user hr identified by hr;
+  grant connect, resource to hr;
+  alter user hr quota unlimited on users;
+  create table hr.employees (id number primary key, name varchar2(50));
+  exit;
+
+-----------------------------
+Таблицы нужно создавать. Репликация только перебрасывает данные таблиц. Нужно будет проверить dll import. (DDL INCLUDE ALL).
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+
+! надо да
+
+-----
+если ошибка то 
+DELETE CREDENTIALSTORE
+ADD CREDENTIALSTORE
+-----
+ALTER CREDENTIALSTORE ADD USER ggadmin@//oracle-source:1521/FREEPDB1 ALIAS srcdb DOMAIN OracleGoldenGate PASSWORD Kate2006
+ALTER CREDENTIALSTORE ADD USER ggadmin@//oracle-target:1521/FREEPDB1 ALIAS tgtdb DOMAIN OracleGoldenGate PASSWORD Kate2006
+--------------------------------------------------
+
+			ВКЛЮЧЕНИЕ РЕПЛИКАЦИИ. 
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+
+	Extract из сурса: 
+
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+ADD TRANDATA hr.employees
+ADD EXTRACT ext1 INTEGRATED TRANLOG BEGIN NOW
+ADD EXTTRAIL aa EXTRACT ext1
+EDIT PARAMS ext1
+
+в открытом виме пишем: 
+EXTRACT ext1
+USERIDALIAS srcdb DOMAIN OracleGoldenGate
+EXTTRAIL aa
+TABLE hr.employees;
+
+START EXTRACT ext1
+INFO EXTRACT ext1
+
+	Replicat в таргет: 
+
+DBLOGIN USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+ADD CHECKPOINTTABLE ggadmin.chkpt
+ADD REPLICAT rep1 INTEGRATED EXTTRAIL aa CHECKPOINTTABLE ggadmin.chkpt
+EDIT PARAMS rep1
+
+в открытом виме пишем:
+REPLICAT rep1
+USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+MAP hr.employees, TARGET hr.employees;
+
+START REPLICAT rep1
+INFO REPLICAT rep1
+-------------------------------------------
+docker exec -i oracle-source sqlplus system/Kate2006@//localhost:1521/FREEPDB1
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+REGISTER EXTRACT ext1 DATABASE
+-------------------------------------------
+
+ДЛЯ ДЕБАГА МОЖНО: 	VIEW REPORT ext1
+			INFO EXTRACT ext1
+			INFO REPLICAT rep1
+-------------------------------------------	
+ЕСЛИ ОШИБКА ПО ТИПУ: 
+
+ERROR   OGG-02062  User ggadmin@//oracle-source:1521/FREEPDB1 does not have the required privileges to use integrated capture
+
+ТО СНАЧАЛА ВЫПОЛНИТЕ ГРАНТЫ, КОТОРЫЕ УКАЗАНЫ НИЖЕ! если не помогает, см пункт после грантов.
+
+Зайти с дба и выполнить гранты
+docker exec -it oracle-source sqlplus "sys/Kate2006@//localhost:1521/FREEPDB1 as sysdba"
+Если все еще хуже, то зайти с дба к сдб и выполнить гранты
+docker exec -it oracle-source sqlplus "sys/Kate2006@//localhost:1521/FREE as sysdba"
+
+-- 1. Basic Access
+GRANT CONNECT, RESOURCE, DBA TO GGADMIN;
+GRANT CREATE SESSION, ALTER SESSION TO GGADMIN;
+
+-- 2. Data Access
+GRANT SELECT ANY DICTIONARY TO ggadmin;
+GRANT FLASHBACK ANY TABLE TO ggadmin;
+GRANT SELECT ANY TABLE TO ggadmin;
+
+-- 3. GoldenGate Internals (Crucial for Integrated Extract)
+GRANT EXECUTE ON DBMS_FLASHBACK TO ggadmin;
+GRANT EXECUTE ON DBMS_LOGMNR TO ggadmin;
+GRANT LOGMINING TO ggadmin;
+
+-- 4. Check that GoldenGate is actually enabled
+SHOW PARAMETER enable_goldengate_replication;
+
+GRANT EXECUTE ON DBMS_CAPTURE_ADM TO ggadmin;
+GRANT EXECUTE ON DBMS_XSTREAM_ADM TO ggadmin;
+GRANT BECOME USER TO ggadmin;
+EXIT;
+
+это дополнительные гранты, которые вряд ли помогут, но вдруг: 
+-- 1. System wide power
+GRANT DBA TO ggadmin;
+GRANT ALL PRIVILEGES TO ggadmin;
+GRANT ALTER SYSTEM TO ggadmin;
+GRANT ALTER DATABASE TO ggadmin;
+
+-- 2. GoldenGate Administrative Packages (The critical ones)
+GRANT EXECUTE ON DBMS_CAPTURE_ADM TO ggadmin;
+GRANT EXECUTE ON DBMS_APPLY_ADM TO ggadmin;
+GRANT EXECUTE ON DBMS_XSTREAM_ADM TO ggadmin;
+GRANT EXECUTE ON DBMS_GOLDENGATE_ADM TO ggadmin;
+GRANT EXECUTE ON DBMS_LOGMNR TO ggadmin;
+GRANT EXECUTE ON DBMS_LOGMNR_D TO ggadmin;
+
+-- 3. LogMiner specific access
+GRANT SELECT ANY TRANSACTION TO ggadmin;
+GRANT SELECT ANY DICTIONARY TO ggadmin;
+GRANT LOCK ANY TABLE TO ggadmin;
+GRANT EXECUTE ON DBMS_FLASHBACK TO ggadmin;
+
+-- 4. Ensure Supplemental Logging is on at the DB level
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+EXIT;
+
+------------------------------------
+для проверки: 	SELECT granted_role FROM dba_role_privs WHERE grantee = 'GGADMIN';
+		SELECT privilege FROM dba_sys_privs WHERE grantee = 'GGADMIN';
+	SELECT owner, table_name, privilege FROM dba_tab_privs WHERE grantee = 'GGADMIN';
+--------------------------------------------------
+
+Если гранты не помогли, то ошибка в алиасах (?). Их дроп мне помог.
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+
+DELETE CREDENTIALSTORE
+ADD CREDENTIALSTORE --делайте. если выдает ошибку, это норм.
+-----
+ALTER CREDENTIALSTORE ADD USER ggadmin@//oracle-source:1521/FREEPDB1 ALIAS srcdb DOMAIN OracleGoldenGate PASSWORD Kate2006
+ALTER CREDENTIALSTORE ADD USER ggadmin@//oracle-target:1521/FREEPDB1 ALIAS tgtdb DOMAIN OracleGoldenGate PASSWORD Kate2006
+--------------------------------------------------
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DELETE CREDENTIALSTORE
+ADD CREDENTIALSTORE
+ALTER CREDENTIALSTORE ADD USER ggadmin@//oracle-source:1521/FREEPDB1 ALIAS srcdb DOMAIN OracleGoldenGate PASSWORD Kate2006
+ALTER CREDENTIALSTORE ADD USER ggadmin@//oracle-target:1521/FREEPDB1 ALIAS tgtdb DOMAIN OracleGoldenGate PASSWORD Kate2006
+
+docker exec -it oracle-source sqlplus "sys/Kate2006@//localhost:1521/FREEPDB1 as sysdba"
+ ALTER SYSTEM SET ENABLE_GOLDENGATE_REPLICATION = TRUE SCOPE=BOTH;
+GRANT OGG_CAPTURE TO GGADMIN;
+GRANT CONNECT, RESOURCE TO GGADMIN;
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+REGISTER EXTRACT ext1 DATABASE
+
+Тут будет ошибка из-за того, что архивлог выключен.
+
+docker exec -it oracle-source sqlplus "sys/Kate2006@//localhost:1521/FREEPDB1 as sysdba"
+SELECT name, value FROM v$parameter WHERE name = 'enable_goldengate_replication'; 
+--должно быть тру
+
+docker exec -it oracle-source sqlplus "sys/Kate2006@//localhost:1521/FREE as sysdba"
+SHOW CON_NAME;
+СДБ РУТ ТУТ ОЧЕНЬ НУЖЕН!!!
+
+ARCHIVE LOG LIST;
+Database log mode No Archive Mode подтверждает, что бд у нас не готова к архивированию.
+SHUTDOWN IMMEDIATE;
+выходим из склплюс или он сам кикает
+docker exec -it oracle-source bash
+sqlplus / as sysdba
+show con_name;
+если пишет, что инстанс в отключке, то это прекрасно
+STARTUP MOUNT;
+ALTER DATABASE ARCHIVELOG;
+ALTER DATABASE FORCE LOGGING;
+ALTER DATABASE OPEN;
+ARCHIVE LOG LIST;
+
+после этого команда архив лол глист должна выводить
+Database log mode              Archive Mode
+Automatic archival             Enabled
+
+------------------------
+SHOW PARAMETER enable_goldengate_replication;
+
+-- If value is FALSE or not set:
+ALTER SYSTEM SET enable_goldengate_replication = TRUE SCOPE=BOTH;
+------------------------
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+REGISTER EXTRACT ext1 DATABASE
+
+ДОЛЖНО БЫТЬ Extract group EXT1 successfully registered with database at SCN 2405707.
+START EXTRACT ext1
+
+----------------------------------------------------
+для дебага: 	INFO * DETAIL
+		Extract и Replicat должны иметь статус RUNNING
+----------------------------------------------------
+
+Быстрая справка в конце: 
+в таблице, которая была создана, лежит значение имени. оно НЕ реплицируется, тк репликация проходит только после своего начала. То есть, то, что было добавлено до ее начала, добавлено в другую субд не будет!!!!!
+
+docker exec -i oracle-source sqlplus system/Kate2006@//localhost:1521/FREEPDB1
+INSERT INTO HR.employees (id, name) VALUES (2, 'Test User');
+commit;
+
+docker exec -i oracle-target sqlplus system/Kate2006@//localhost:1521/FREEPDB1
+SELECT * FROM HR.employees;
+
+Если есть test user, то все прекрасно. Если no rows selected, то либо не работает репликация, либо не закоммитили или не добавилась строка в сурсе.
+
+DBMS_GOLDENGATE_AUTH.GRANT_ADMIN_PRIVILEGE(grantee=>'ggadmin',privilege_type => 'CAPTURE', grant_select_privileges => TRUE );
+
+======================================================
+ПОСЛЕ ЗАКРЫТИЯ КОНТЕЙНЕРА
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+START EXTRACT ext1
+INFO EXTRACT ext1
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+START REPLICAT rep1
+INFO REPLICAT rep1
+
+
+для пересоздания репликации: 
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+DELETE EXTRACT ext1
+///////DELETE TRAIL aa ??? вроде не надо
+
+docker exec -i oracle-source sqlplus system/Kate2006@//localhost:1521/FREEPDB1
+дропнуть таблицы потом создать
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+DELETE REPLICAT rep1
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+ADD EXTRACT ext1 INTEGRATED TRANLOG BEGIN NOW
+ADD EXTTRAIL am EXTRACT ext1
+
+ИЛИ ЕСЛИ СОЗДАН ТО ПЛОХО Я ХЗ КАК ДРОПНУТЬ
+
+EDIT PARAMS ext1
+vim:
+EXTRACT ext1
+USERIDALIAS srcdb DOMAIN OracleGoldenGate
+EXTTRAIL aa
+TABLE admin_user.Musicians;
+TABLE admin_user.Albums;
+TABLE admin_user.Music;
+TABLE admin_user.Users;
+TABLE admin_user.Awards;
+TABLE admin_user.Nominants;
+TABLE admin_user.Winners;
+TABLE admin_user.Votes;
+TABLE admin_user.AlbumRatings;
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+ADD REPLICAT rep1 INTEGRATED EXTTRAIL ak CHECKPOINTTABLE ggadmin.chkpt
+
+vim:
+REPLICAT rep1
+USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+HANDLECOLLISIONS
+MAP admin_user.Musicians, TARGET admin_user.Musicians;
+MAP admin_user.Albums, TARGET admin_user.Albums;
+MAP admin_user.Music, TARGET admin_user.Music;
+MAP admin_user.Users, TARGET admin_user.Users;
+MAP admin_user.Awards, TARGET admin_user.Awards;
+MAP admin_user.Nominants, TARGET admin_user.Nominants;
+MAP admin_user.Winners, TARGET admin_user.Winners;
+MAP admin_user.Votes, TARGET admin_user.Votes;
+MAP admin_user.AlbumRatings, TARGET admin_user.AlbumRatings;
+
+ВСЕ В ВЕРХНЕМ РЕГИСТРЕ
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS srcdb DOMAIN OracleGoldenGate
+ADD TRANDATA ADMIN_USER.MUSICIANS
+ADD TRANDATA ADMIN_USER.ALBUMS
+ADD TRANDATA ADMIN_USER.MUSIC
+ADD TRANDATA ADMIN_USER.USERS
+ADD TRANDATA ADMIN_USER.AWARDS
+ADD TRANDATA ADMIN_USER.NOMINANTS
+ADD TRANDATA ADMIN_USER.WINNERS
+ADD TRANDATA ADMIN_USER.VOTES
+ADD TRANDATA ADMIN_USER.ALBUMRATINGS
+
+ВСЕ В ВЕРХНЕМ РЕГИСТРЕ И БЕЗ ТАБОВ
+
+REGISTER EXTRACT ext1 DATABASE
+START EXTRACT ext1
+
+docker exec -it ogg-microservices /u01/ogg/bin/adminclient
+connect https://localhost:443 deployment Demo as ggadmin password Kate2006 !
+DBLOGIN USERIDALIAS tgtdb DOMAIN OracleGoldenGate
+START REPLICAT rep1
+
+ADD REPLICAT rep1 INTEGRATED EXTTRAIL aa CHECKPOINTTABLE ggadmin.chkpt

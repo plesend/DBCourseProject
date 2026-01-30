@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css"/>
+  <title>Awards - Shirasagi</title>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <button class="logout-button">Logout</button>
+      <div class="banner-title">
+        <h1>YEAR AWARDS</h1>
+        <h1>SHIRASAGI</h1>
+      </div>
+      <div class="banner-rest">
+        <div>
+          <h3>FROM GUNS TO GUITARS</h3>
+          <p>Shirasagi - worldwide known music awards.<br>
+          Spend your time listening to music!</p>
+        </div>
+        <div>
+          <p>PROD. BY BSTU</p>
+        </div>
+      </div>
+    </div>
+    <img src="/img/Other/Makimaa.png" alt="Makima">
+    <hr/>
+  </header>
+
+  <main>
+<div class="winners-section" id="winnersSection" hidden>
+  <h2 class="winners-title">VOTING HAS FINISHED</h2>
+
+  <div class="winners-slider">
+    <button class="prev-btn" aria-label="Previous">&#10094;</button>
+    <div class="winners-wrapper">
+      <div class="winners-container" id="winnersContainer"></div>
+    </div>
+    <button class="next-btn" aria-label="Next">&#10095;</button>
+  </div>
+
+  <hr class="winners-divider"/>
+</div>
+
+
+    <div class="main-container">
+      <div class="main-card-container" id="mainCardContainer"></div>
+      <div class="cards-container" id="cardsContainer"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2025 Shirasagi Awards. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 0;
+    const visibleCards = 2.2;
+async function checkAndLoadWinners() {
+  try {
+    const checkRes = await fetch('/api/hasCalculatedWinners');
+    const checkData = await checkRes.json();
+
+    const winnersSection = document.getElementById('winnersSection');
+
+    if (checkData.success === false) {
+      winnersSection.hidden = true;
+      return;
+    }
+    winnersSection.hidden = false;
+    await loadWinners(); 
+
+  } catch (err) {
+    console.error('Error checking winners status:', err);
+    document.getElementById('winnersSection').hidden = true;
+  }
+}
+    async function loadWinners() {
+      try {
+        const res = await fetch('/api/winners');
+        const data = await res.json();
+        const container = document.getElementById('winnersContainer');
+        container.innerHTML = '';
+
+        data.rows.forEach(row => {
+          const [awardId, awardName, albumId, albumTitle, musicianId, musicianName, picture] = row;
+          const card = document.createElement('div');
+          card.className = 'winner-card';
+          card.innerHTML = `
+            <img src="${picture}" alt="${albumTitle}">
+            <div class="winner-info">
+              <h4>${awardName}</h4>
+              <p><strong>Album:</strong> ${albumTitle}</p>
+              <p><strong>Musician:</strong> ${musicianName}</p>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+        updateSlider();
+      } catch (err) {
+        console.error('Error loading winners:', err);
+      }
+    }
+
+    function updateSlider() {
+      const container = document.getElementById('winnersContainer');
+      if (!container.children.length) return;
+
+      const card = container.querySelector('.winner-card');
+      const cardWidth = card.offsetWidth;
+      const gap = parseInt(getComputedStyle(container).gap) || 20; // обычно gap в CSS
+      const shift = cardWidth + gap;
+
+      const maxSlide = Math.max(0, container.children.length - visibleCards);
+      currentSlide = Math.min(currentSlide, maxSlide);
+
+      container.style.transform = `translateX(-${currentSlide * shift}px)`;
+      
+      // Управление видимостью кнопок
+      document.querySelector('.prev-btn').disabled = currentSlide === 0;
+      document.querySelector('.next-btn').disabled = currentSlide >= maxSlide;
+    }
+
+    document.querySelector('.prev-btn').addEventListener('click', () => {
+      currentSlide = Math.max(0, currentSlide - 1);
+      updateSlider();
+    });
+
+    document.querySelector('.next-btn').addEventListener('click', () => {
+      const container = document.getElementById('winnersContainer');
+      const maxSlide = Math.max(0, container.children.length - visibleCards);
+      currentSlide = Math.min(maxSlide, currentSlide + 1);
+      updateSlider();
+    });
+
+    // Обновление при изменении размера окна
+    window.addEventListener('resize', updateSlider);
+
+    // Logout
+    document.querySelector('.logout-button').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Error during logout:', err);
+        alert('Network error. Please try again.');
+      }
+    });
+
+    // Загрузка номинаций (остальной код без изменений)
+    async function loadAwards() {
+      try {
+        const response = await fetch('/api/awards');
+        const data = await response.json();
+        const mainContainer = document.getElementById('mainCardContainer');
+        const container = document.getElementById('cardsContainer');
+
+        data.rows.forEach((row, index) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <h3>${row[1]}</h3>
+            <p>${row[2]}</p>
+          `;
+          card.addEventListener('click', () => {
+            window.location.href = `/award/${row[0]}`;
+          });
+          if (index === 0) {
+            card.classList.add('highlight');
+            mainContainer.appendChild(card);
+          } else {
+            container.appendChild(card);
+          }
+        });
+      } catch (err) {
+        console.error('Error loading awards:', err);
+      }
+    }
+
+    loadAwards();
+checkAndLoadWinners()
+  </script>
+</body>
+</html>
